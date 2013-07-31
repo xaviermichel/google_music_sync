@@ -1,6 +1,8 @@
 google_music_sync
 =================
 
+*need* https://github.com/simon-weber/Unofficial-Google-Music-API
+
 Push &amp; Pull your google music songs
 
 1/ edit constants at the head of the file
