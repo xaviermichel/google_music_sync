@@ -1,0 +1,87 @@
+#!-*-coding:utf-8-*-
+
+#
+# https://github.com/simon-weber/Unofficial-Google-Music-API
+# push music in PUSH_DIR and, after, pull music in PULL_DIR
+#
+
+from gmusicapi import Musicmanager
+import os
+import marshal
+
+ROOT='/home/xavier/musique/'
+
+DICT_FILE= ROOT + '.gmusic.bdd'
+PULL_DIR = ROOT + '{artist}/{album}/'
+PUSH_DIR = ROOT + 'to_upload/'
+
+def pull() :
+	i = 0
+	all_songs = mm.get_all_songs()
+	for track in all_songs :
+		i+=1
+		print 'Track ' + str(i) + ' / ' + str(len(all_songs)),
+
+		# si on a déjà l'ID dans le dico, c'est que l'on a déjà la chanson
+		if track['id'] in id_list :
+			print ' is already downloaded'
+			continue
+
+		print ' is downloading...'
+
+		id_list.append(track['id'])
+
+		# build file path
+		target_path=PULL_DIR
+		for element in track :
+			if '{' + element + '}' in target_path :
+				target_path = target_path.replace('{' + element + '}', track[element].encode('utf-8'))
+
+		if not os.path.exists(target_path):
+			os.makedirs(target_path)
+
+		filename, audio = mm.download_song(track['id'])
+		with open(target_path + filename.encode('utf-8'), 'wb') as f:
+			f.write(audio)
+
+
+def push() :
+	for musique in [f for f in os.listdir(PUSH_DIR) if f.endswith('.mp3')] :
+		print musique,
+		uploaded, matched, not_uploaded = mm.upload(PUSH_DIR + musique, transcode_quality="320k", enable_matching=True)
+
+		upload_ok = True # on est optimiste, on part du principe que tout va bien :)
+		if uploaded:
+			print " has been uploaded"
+		elif matched:
+			print " has been found in google library"
+		else:
+			if "ALREADY_EXISTS" or "this song is already uploaded" in not_uploaded[file_path]:
+				print " aleady exists"
+			else:
+				print " upload failed !"
+				upload_ok = False
+		# remove uploaded file
+		if upload_ok :
+			os.remove(PUSH_DIR + musique)
+
+
+# init
+id_list=[]
+try : id_list = marshal.load(open(DICT_FILE, "rb"))
+except : pass
+
+mm = Musicmanager()
+if not mm.login() :
+	mm.perform_oauth()
+	mm.login()
+
+# main
+push()
+pull()
+
+# finish
+mm.logout()
+marshal.dump(id_list, open(DICT_FILE, 'wb'))
+
+
