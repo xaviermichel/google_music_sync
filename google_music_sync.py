@@ -13,7 +13,7 @@ ROOT='/home/xavier/musique/'
 
 DICT_FILE= ROOT + '.gmusic.bdd'
 PULL_DIR = ROOT + '{artist}/{album}/'
-PUSH_DIR = ROOT + 'to_upload/'
+PUSH_DIR = '/home/xavier/musique_to_upload/'
 
 def pull() :
 	i = 0
@@ -33,9 +33,9 @@ def pull() :
 
 		# build file path
 		target_path=PULL_DIR
-		for element in track :
-			if '{' + element + '}' in target_path :
-				target_path = target_path.replace('{' + element + '}', track[element].encode('utf-8'))
+		for element in [e for e in track if '{' + e + '}' in target_path] :
+			target_path = target_path.replace('{' + element + '}', track[element].encode('utf-8'))
+		target_path = ''.join(e for e in target_path if e.isalnum() or e in '/ .,;')
 
 		if not os.path.exists(target_path):
 			os.makedirs(target_path)
@@ -43,6 +43,8 @@ def pull() :
 		filename, audio = mm.download_song(track['id'])
 		with open(target_path + filename.encode('utf-8'), 'wb') as f:
 			f.write(audio)
+
+		marshal.dump(id_list, open(DICT_FILE, 'wb'))
 
 
 def push() :
@@ -77,8 +79,9 @@ if not mm.login() :
 	mm.login()
 
 # main
-push()
 pull()
+print "==========="
+push()
 
 # finish
 mm.logout()
