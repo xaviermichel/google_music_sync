@@ -9,7 +9,7 @@ from gmusicapi import Musicmanager
 import os
 import marshal
 
-ROOT='/home/xavier/musique/'
+ROOT='/home/xavier/musiques/'
 
 DICT_FILE= ROOT + '.gmusic.bdd'
 PULL_DIR = ROOT + '{artist}/{album}/'
@@ -23,27 +23,29 @@ def pull() :
 		print 'Track ' + str(i) + ' / ' + str(len(all_songs)),
 
 		# si on a déjà l'ID dans le dico, c'est que l'on a déjà la chanson
-		if track['id'] in id_list :
+		if track['id'] in id_list.keys() :
 			print ' is already downloaded'
 			continue
 
 		print ' is downloading...'
 
-		id_list.append(track['id'])
-
 		# build file path
-		target_path=PULL_DIR
+		target_path=unicode(PULL_DIR, 'utf-8')
 		for element in [e for e in track if '{' + e + '}' in target_path] :
-			target_path = target_path.replace('{' + element + '}', track[element].encode('utf-8'))
-		target_path = ''.join(e for e in target_path if e.isalnum() or e in '/ .,;')
+			target_path = target_path.replace('{' + element + '}', track[element])
 
-		if not os.path.exists(target_path):
-			os.makedirs(target_path)
+		target_path = target_path.replace(u'É', u'é')
+		target_path = ''.join(e for e in target_path if e.isalnum() or e in u'/ .,;-_éèêàâùïîçùûô')
+
+		#print type(target_path), target_path
+		if not os.path.exists(target_path.lower()) :
+			os.makedirs(target_path.lower())
 
 		filename, audio = mm.download_song(track['id'])
-		with open(target_path + filename.encode('utf-8'), 'wb') as f:
+		with open(target_path.lower() + filename, 'wb') as f:
 			f.write(audio)
 
+		id_list[track['id']] = target_path.lower() + filename
 		marshal.dump(id_list, open(DICT_FILE, 'wb'))
 
 
@@ -69,7 +71,7 @@ def push() :
 
 
 # init
-id_list=[]
+id_list={}
 try : id_list = marshal.load(open(DICT_FILE, "rb"))
 except : pass
 
