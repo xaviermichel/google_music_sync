@@ -5,6 +5,13 @@
 # push music in PUSH_DIR and, after, pull music in PULL_DIR
 #
 
+# pre-init
+import sys
+if len(sys.argv) == 1 :
+	print 'No action define... Use "push" or "pull" in args !'
+	sys.exit(0)
+###
+
 from gmusicapi import Musicmanager
 import os
 import marshal
@@ -20,13 +27,13 @@ def pull() :
 	all_songs = mm.get_all_songs()
 	for track in all_songs :
 		i+=1
-		print 'Track ' + str(i) + ' / ' + str(len(all_songs)),
 
 		# si on a déjà l'ID dans le dico, c'est que l'on a déjà la chanson
 		if track['id'] in id_list.keys() :
-			print ' is already downloaded'
+			#print ' is already downloaded'
 			continue
 
+		print 'Track ' + str(i) + ' / ' + str(len(all_songs)),
 		print ' is downloading...'
 
 		# build file path
@@ -70,6 +77,7 @@ def push() :
 			os.remove(PUSH_DIR + musique)
 
 
+
 # init
 id_list={}
 try : id_list = marshal.load(open(DICT_FILE, "rb"))
@@ -80,10 +88,14 @@ if not mm.login() :
 	mm.perform_oauth()
 	mm.login()
 
-# main
-pull()
-print "==========="
-push()
+for arg in sys.argv :
+	if arg == 'pull' :
+		print 'pulling...'
+		pull()
+	elif arg == 'push' :
+		print 'pushing...'
+		push()
+
 
 # finish
 mm.logout()
